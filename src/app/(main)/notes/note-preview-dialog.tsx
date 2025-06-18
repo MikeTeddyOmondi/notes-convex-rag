@@ -13,6 +13,7 @@ import { Trash2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { api } from "../../../../convex/_generated/api";
 import { Doc } from "../../../../convex/_generated/dataModel";
 
@@ -52,7 +53,9 @@ export function NotePreviewDialog({ note }: NotePreviewDialogProps) {
         <DialogHeader>
           <DialogTitle>{note.title}</DialogTitle>
         </DialogHeader>
-        <div className="mt-4 whitespace-pre-wrap">{note.body}</div>
+        <ScrollArea className="h-[75vh] w-[574px] rounded-md border p-4">
+          <div className="mt-4 whitespace-pre-wrap">{note.body}</div>
+        </ScrollArea>
         <DialogFooter className="mt-6">
           <Button
             variant="destructive"
