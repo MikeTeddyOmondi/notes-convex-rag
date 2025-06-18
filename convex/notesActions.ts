@@ -50,7 +50,7 @@ export const findRelevantNotes = internalAction({
       filter: (q) => q.eq("userId", args.userId),
     });
 
-    console.log("vector search results:", results);
+    // console.log("vector search results:", results);
 
     const resultsAboveThreshold = results.filter(
       (result) => result._score > 0.3
