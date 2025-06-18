@@ -1,6 +1,9 @@
-import { openai } from "@ai-sdk/openai";
+import { createGroq } from "@ai-sdk/groq";
+// import { openai } from "@ai-sdk/openai";
+import { createOllama, ollama } from "ollama-ai-provider";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { convertToModelMessages, streamText, tool, UIMessage } from "ai";
+// import { convertToModelMessages, streamText, tool, UIMessage } from "ai";
+import { streamText, tool, UIMessage } from "ai";
 import { httpRouter } from "convex/server";
 import { z } from "zod";
 import { internal } from "./_generated/api";
@@ -8,6 +11,12 @@ import { httpAction } from "./_generated/server";
 import { auth } from "./auth";
 
 const http = httpRouter();
+
+const groq = createGroq({});
+
+// const ollama = createOllama({
+//   baseURL: "http://localhost:11434/api",
+// });
 
 auth.addHttpRoutes(http);
 
@@ -25,7 +34,9 @@ http.route({
     const lastMessages = messages.slice(-10);
 
     const result = streamText({
-      model: openai("gpt-4o"),
+      // model: openai("gpt-4o"),
+      // model: ollama("llama3.2:3b"),
+      model: groq("deepseek-r1-distill-llama-70b"),
       system: `
       You are a helpful assistant that can search through the user's notes.
       Use the information from the notes to answer questions and provide insights.
@@ -34,7 +45,8 @@ http.route({
       Provide links to relevant notes using this relative URL structure (omit the base URL): '/notes?noteId=<note-id>'.
       Keep your responses concise and to the point.
       `,
-      messages: convertToModelMessages(lastMessages),
+      // messages: convertToModelMessages(lastMessages),
+      messages: lastMessages,
       tools: {
         findRelevantNotes: tool({
           description:
@@ -67,7 +79,13 @@ http.route({
       },
     });
 
-    return result.toUIMessageStreamResponse({
+    // return result.toUIMessageStreamResponse({
+    //   headers: new Headers({
+    //     "Access-Control-Allow-Origin": "*",
+    //     Vary: "origin",
+    //   }),
+    // });
+    return result.toDataStreamResponse({
       headers: new Headers({
         "Access-Control-Allow-Origin": "*",
         Vary: "origin",

@@ -6,9 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
 import { useAuthToken } from "@convex-dev/auth/react";
-import { DefaultChatTransport, UIMessage } from "ai";
+// import { DefaultChatTransport, UIMessage } from "ai";
+import { UIMessage } from "ai";
 import { Bot, Expand, Minimize, Send, Trash, X } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 
 const convexSiteUrl = process.env.NEXT_PUBLIC_CONVEX_URL?.replace(
   /.cloud$/,
@@ -34,36 +35,91 @@ interface AIChatBoxProps {
   onClose: () => void;
 }
 
-const initialMessages: UIMessage[] = [
-  {
-    id: "welcome-message",
-    role: "assistant",
-    parts: [
-      {
-        type: "text",
-        text: "I'm your notes assistant. I can find and summarize any information that you saved.",
-      },
-    ],
-  },
-];
+// const initialMessages: UIMessage[] = [
+//   {
+//     id: "welcome-message",
+//     role: "assistant",
+//     parts: [
+//       {
+//         type: "text",
+//         text: "I'm your notes assistant. I can find and summarize any information that you saved.",
+//       },
+//     ],
+//   },
+// ];
+
+// const initialMessages = (id: string): UIMessage[] => {
+//   return [
+//     {
+//       id: "welcome-message",
+//       initialMessages: useMemo(
+//         () => [
+//           {
+//             id: `system-${id}`,
+//             role: "system",
+//             content:
+//               "You are an AI assistant for the Nation Media Group, a historical newspaper archive. Help users find newspapers, provide historical context, and assist with purchases.",
+//           },
+//           {
+//             id: `welcome-${id}`,
+//             role: "assistant",
+//             content:
+//               "Welcome to the Nation Media Group's Archive! I'm your assistant, here to help you explore our vast collection of historical newspapers. You can ask me about specific events, time periods, or newspapers. How can I assist you today?",
+//           },
+//         ],
+//         [id]
+//       ),
+//     },
+//   ];
+// };
 
 function AIChatBox({ open, onClose }: AIChatBoxProps) {
-  const [input, setInput] = useState("");
+  const id = useId();
+
+  // const initialMessages: UIMessage[] = initialMessages(id);
+
+  // const [input, setInput] = useState("");
 
   const [isExpanded, setIsExpanded] = useState(false);
 
   const token = useAuthToken();
 
-  const { messages, sendMessage, setMessages, status } = useChat({
-    transport: new DefaultChatTransport({
+  // const { messages, sendMessage, setMessages, status } = useChat({
+  //   transport: new DefaultChatTransport({
+  //     api: `${convexSiteUrl}/api/chat`,
+  //     headers: {
+  //       Authorization: `Bearer ${token}`,
+  //     },
+  //   }),
+  //   messages: initialMessages,
+  //   maxSteps: 3,
+  // });
+
+  const { messages, handleSubmit, handleInputChange, setMessages, input, status } =
+    useChat({
       api: `${convexSiteUrl}/api/chat`,
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    }),
-    messages: initialMessages,
-    maxSteps: 3,
-  });
+      initialMessages: useMemo(
+        () => [
+          {
+            id: `system-${id}`,
+            role: "system",
+            content:
+              "You are an Archives assistant for a Notes app. You can help users find specific notes they need to reference.",
+          },
+          {
+            id: `welcome-${id}`,
+            role: "assistant",
+            content:
+              "Welcome to the Notes Archive assistant, here to help you explore your notes easily. You can ask me about specific notes. How can I assist you today?",
+          },
+        ],
+        [id]
+      ),
+      maxSteps: 3,
+    });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -75,12 +131,17 @@ function AIChatBox({ open, onClose }: AIChatBoxProps) {
     }
   }, [open, messages]);
 
+  // function onSubmit(e: React.FormEvent) {
+  //   e.preventDefault();
+  //   if (input.trim() && !isProcessing) {
+  //     sendMessage({ text: input });
+  //     setInput("");
+  //   }
+  // }
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (input.trim() && !isProcessing) {
-      sendMessage({ text: input });
-      setInput("");
-    }
+    handleSubmit(e);
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -120,7 +181,7 @@ function AIChatBox({ open, onClose }: AIChatBoxProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setMessages(initialMessages)}
+            // onClick={() => setMessages(initialMessages)}
             className="text-primary-foreground hover:bg-primary/90 h-8 w-8"
             title="Clear chat"
             disabled={isProcessing}
@@ -139,9 +200,11 @@ function AIChatBox({ open, onClose }: AIChatBoxProps) {
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-3">
-        {messages.map((message) => (
-          <ChatMessage key={message.id} message={message} />
-        ))}
+        {messages
+          .filter((m) => m.role !== "system")
+          .map((message) => (
+            <ChatMessage key={message.id} message={message} />
+          ))}
         {status === "submitted" && lastMessageIsUser && <Loader />}
         {status === "error" && <ErrorMessage />}
         <div ref={messagesEndRef} />
@@ -150,7 +213,8 @@ function AIChatBox({ open, onClose }: AIChatBoxProps) {
       <form className="flex gap-2 border-t p-3" onSubmit={onSubmit}>
         <Textarea
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          // onChange={(e) => setInput(e.target.value)}
+          onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="Type your message..."
           className="max-h-[120px] min-h-[40px] resize-none overflow-y-auto"

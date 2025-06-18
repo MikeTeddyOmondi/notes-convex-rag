@@ -1,7 +1,13 @@
-import { openai } from "@ai-sdk/openai";
+// import { openai } from "@ai-sdk/openai";
+import { createOllama } from "ollama-ai-provider";
 import { embed, embedMany } from "ai";
 
-const embeddingModel = openai.embedding("text-embedding-3-small");
+const ollama = createOllama({
+  // baseURL: "http://localhost:11434/api", // For self hosted Convex with Ollama running e.g in Docker & Docker Compose
+  baseURL: "https://07b1-196-207-134-198.ngrok-free.app/api", // Test Ollama server thru Ngrok
+});
+// const embeddingModel = openai.embedding("text-embedding-3-small");
+const embeddingModel = ollama.embedding("nomic-embed-text");
 
 function generateChunks(input: string) {
   return input
